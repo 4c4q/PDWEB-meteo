@@ -1,0 +1,106 @@
+{
+    'bucurești': {
+        lat:
+        long:
+        city: 'București',
+        temp: 22,
+        feelsLike: 24,
+        condition: 'Parțial înnorat',
+        icon: '⛅',
+        humidity: 65,
+        wind: 12,
+        visibility: 10,
+        forecast: [
+            { day: 'Luni', icon: '☀️', high: 25, low: 15 },
+            { day: 'Marți', icon: '⛅', high: 23, low: 14 },
+            { day: 'Miercuri', icon: '🌧️', high: 19, low: 12 },
+            { day: 'Joi', icon: '⛅', high: 21, low: 13 },
+            { day: 'Vineri', icon: '☀️', high: 24, low: 15 }
+        ]
+    },
+    'cluj-napoca': {
+        city: 'Cluj-Napoca',
+        temp: 18,
+        feelsLike: 17,
+        condition: 'Înnorat',
+        icon: '☁️',
+        humidity: 72,
+        wind: 8,
+        visibility: 8,
+        forecast: [
+            { day: 'Luni', icon: '☁️', high: 19, low: 10 },
+            { day: 'Marți', icon: '🌧️', high: 16, low: 9 },
+            { day: 'Miercuri', icon: '🌧️', high: 15, low: 8 },
+            { day: 'Joi', icon: '⛅', high: 18, low: 10 },
+            { day: 'Vineri', icon: '☀️', high: 21, low: 12 }
+        ]
+    },
+    'timișoara': {
+        city: 'Timișoara',
+        temp: 24,
+        feelsLike: 26,
+        condition: 'Însorit',
+        icon: '☀️',
+        humidity: 55,
+        wind: 15,
+        visibility: 15,
+        forecast: [
+            { day: 'Luni', icon: '☀️', high: 26, low: 16 },
+            { day: 'Marți', icon: '☀️', high: 27, low: 17 },
+            { day: 'Miercuri', icon: '⛅', high: 24, low: 15 },
+            { day: 'Joi', icon: '⛅', high: 23, low: 14 },
+            { day: 'Vineri', icon: '☀️', high: 25, low: 16 }
+        ]
+    },
+    'iași': {
+        city: 'Iași',
+        temp: 20,
+        feelsLike: 19,
+        condition: 'Ploaie ușoară',
+        icon: '🌧️',
+        humidity: 80,
+        wind: 10,
+        visibility: 6,
+        forecast: [
+            { day: 'Luni', icon: '🌧️', high: 18, low: 11 },
+            { day: 'Marți', icon: '🌧️', high: 17, low: 10 },
+            { day: 'Miercuri', icon: '⛅', high: 20, low: 12 },
+            { day: 'Joi', icon: '☀️', high: 22, low: 13 },
+            { day: 'Vineri', icon: '☀️', high: 24, low: 14 }
+        ]
+    },
+    'constanța': {
+        city: 'Constanța',
+        temp: 26,
+        feelsLike: 28,
+        condition: 'Însorit',
+        icon: '☀️',
+        humidity: 70,
+        wind: 20,
+        visibility: 20,
+        forecast: [
+            { day: 'Luni', icon: '☀️', high: 28, low: 20 },
+            { day: 'Marți', icon: '☀️', high: 29, low: 21 },
+            { day: 'Miercuri', icon: '⛅', high: 27, low: 19 },
+            { day: 'Joi', icon: '⛅', high: 26, low: 18 },
+            { day: 'Vineri', icon: '☀️', high: 28, low: 20 }
+        ]
+    },
+    'brașov': {
+        city: 'Brașov',
+        temp: 16,
+        feelsLike: 14,
+        condition: 'Răcoros',
+        icon: '🌤️',
+        humidity: 68,
+        wind: 6,
+        visibility: 12,
+        forecast: [
+            { day: 'Luni', icon: '🌤️', high: 17, low: 8 },
+            { day: 'Marți', icon: '⛅', high: 16, low: 7 },
+            { day: 'Miercuri', icon: '🌧️', high: 14, low: 6 },
+            { day: 'Joi', icon: '⛅', high: 15, low: 7 },
+            { day: 'Vineri', icon: '☀️', high: 18, low: 9 }
+        ]
+    }
+}
