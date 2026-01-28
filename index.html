@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vremea în România</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <script type="text/javascript" src="/assets/js/weather.js"></script>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
@@ -31,10 +30,10 @@
             <div class="weather-main">
                 <div>
                     <h2 class="city-name" id="cityName">București</h2>
-                    <div class="temperature" id="temperature">22°C</div>
-                    <div class="condition" id="condition">Parțial înnorat</div>
+                    <div class="temperature" id="temperature">--°C</div>
+                    <div class="condition" id="condition">Se încarcă...</div>
                 </div>
-                <div class="weather-icon" id="weatherIcon">⛅</div>
+                <div class="weather-icon" id="weatherIcon">⏳</div>
             </div>
         </div>
 
@@ -43,33 +42,32 @@
                 <div class="detail-item">
                     <div class="detail-icon">💧</div>
                     <div class="detail-label">Umiditate</div>
-                    <div class="detail-value" id="humidity">65%</div>
+                    <div class="detail-value" id="humidity">--%</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-icon">💨</div>
                     <div class="detail-label">Vânt</div>
-                    <div class="detail-value" id="wind">12 km/h</div>
+                    <div class="detail-value" id="wind">-- km/h</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-icon">👁️</div>
                     <div class="detail-label">Vizibilitate</div>
-                    <div class="detail-value" id="visibility">10 km</div>
+                    <div class="detail-value" id="visibility">-- km</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-icon">🌡️</div>
                     <div class="detail-label">Se simte ca</div>
-                    <div class="detail-value" id="feelsLike">24°C</div>
+                    <div class="detail-value" id="feelsLike">--°C</div>
                 </div>
             </div>
         </div>
 
         <div class="glass-card">
             <h3 class="forecast-title">📅 Prognoza pe 5 zile</h3>
-            <div class="forecast-grid" id="forecastGrid">
-                <!-- Forecast will be inserted here -->
-            </div>
+            <div class="forecast-grid" id="forecastGrid"></div>
         </div>
     </div>
 
+    <script src="js/main.js"></script>
 </body>
 </html>
