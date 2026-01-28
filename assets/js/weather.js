@@ -1,5 +1,14 @@
-// Weather database for Romanian cities
-const weatherDatabase = "";
+let weatherDatabase = {};
+
+async function loadDatabase() {
+    try {
+        const response = await fetch('database.json');
+        weatherDatabase = await response.json();
+        selectCity('București');
+    } catch (error) {
+        console.error('Error loading database:', error);
+    }
+}
 
 function updateWeather(data) {
     document.getElementById('cityName').textContent = data.city;
@@ -70,7 +79,5 @@ function hideError() {
     document.getElementById('errorMessage').style.display = 'none';
 }
 
-// Initialize with București
-selectCity('București');
-
-// 
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', loadDatabase);
