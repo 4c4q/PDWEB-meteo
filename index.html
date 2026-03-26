@@ -15,6 +15,13 @@
             <button class="search-btn" onclick="searchCity()">Caută</button>
         </div>
 
+        <!-- Butonul de geolocație (opțional, dar recomandat) -->
+        <div style="text-align: center; margin: 15px 0;">
+            <button class="location-btn" onclick="getCurrentLocation()">
+                📍 Locația mea actuală
+            </button>
+        </div>
+
         <div class="city-buttons">
             <button class="city-btn active" onclick="selectCity('București')">București</button>
             <button class="city-btn" onclick="selectCity('Cluj-Napoca')">Cluj-Napoca</button>
@@ -67,7 +74,7 @@
             <div class="forecast-grid" id="forecastGrid"></div>
         </div>
     </div>
-
+    
     <script src="js/weather.js"></script>
 </body>
 </html>
