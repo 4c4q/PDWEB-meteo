@@ -1,152 +1,179 @@
-const API_KEY = "d60f6ce4b67ad37cf228a26d41357643";
+const cityCoordinates = {
+    "București": { lat: 44.4268, lon: 26.1025 },
+    "Cluj-Napoca": { lat: 46.7712, lon: 23.6236 },
+    "Timișoara": { lat: 45.7537, lon: 21.2257 },
+    "Iași": { lat: 47.1585, lon: 27.6014 },
+    "Constanța": { lat: 44.1598, lon: 28.6348 },
+    "Brașov": { lat: 45.6528, lon: 25.6109 }
+};
 
-let weatherDatabase = {};
+// Funcție principală - ia vremea live
+async function getWeather(city) {
+    hideError();
+    
+    const coords = cityCoordinates[city];
+    if (!coords) {
+        showError("Orașul nu este suportat momentan.");
+        return;
+    }
 
-// Încarcă baza locală de date (fallback)
-async function loadDatabase() {
-  try {
-    const response = await fetch("database.json");
-    weatherDatabase = await response.json();
-  } catch (error) {
-    console.error("Eroare la încărcarea database.json:", error);
-  }
+    try {
+        const url = `https://api.open-meteo.com/v1/forecast?` +
+                    `latitude=${coords.lat}&longitude=${coords.lon}` +
+                    `&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code` +
+                    `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
+                    `&timezone=auto`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Eroare la server");
+
+        const data = await response.json();
+
+        updateCurrentWeather(data, city);
+        updateForecast(data.daily);
+
+        // Salvează ultimul oraș
+        localStorage.setItem("lastCity", city);
+
+    } catch (error) {
+        console.error(error);
+        showError("Nu am putut încărca datele meteo. Verifică conexiunea.");
+    }
 }
 
-// Loading și eroare
-function showLoading(show) {
-  const loader = document.getElementById("loading");
-  if (loader) loader.style.display = show ? "block" : "none";
+// Actualizează vremea curentă
+function updateCurrentWeather(data, city) {
+    const current = data.current;
+
+    document.getElementById("cityName").textContent = city;
+    document.getElementById("temperature").textContent = Math.round(current.temperature_2m) + "°C";
+    document.getElementById("condition").textContent = getWeatherDescription(current.weather_code);
+    document.getElementById("humidity").textContent = current.relative_humidity_2m + "%";
+    document.getElementById("wind").textContent = current.wind_speed_10m + " km/h";
+    document.getElementById("feelsLike").textContent = Math.round(current.apparent_temperature) + "°C";
+
+    // Iconiță meteo (folosim emoji pentru moment - poți schimba cu imagini mai târziu)
+    document.getElementById("weatherIcon").textContent = getWeatherEmoji(current.weather_code);
+
+    // Vizibilitate - Open-Meteo nu oferă direct, punem o valoare estimată
+    document.getElementById("visibility").textContent = "10 km"; 
 }
 
+// Prognoza pe 5 zile
+function updateForecast(daily) {
+    const forecastGrid = document.getElementById("forecastGrid");
+    if (!forecastGrid) return;
+
+    let html = "";
+
+    for (let i = 0; i < 5; i++) {
+        const day = daily;
+        const date = new Date(day.time[i]);
+        
+        html += `
+            <div class="forecast-day">
+                <div class="forecast-day-name">
+                    ${date.toLocaleDateString('ro-RO', { weekday: 'short' })}
+                </div>
+                <div class="forecast-icon">${getWeatherEmoji(day.weather_code[i])}</div>
+                <div class="forecast-temp">${Math.round(day.temperature_2m_max[i])}°</div>
+                <div class="forecast-temp-min">${Math.round(day.temperature_2m_min[i])}°</div>
+            </div>
+        `;
+    }
+
+    forecastGrid.innerHTML = html;
+}
+
+// Dicționar simplu pentru descriere + emoji
+function getWeatherDescription(code) {
+    const descriptions = {
+        0: "Cer senin",
+        1: "Predominant senin",
+        2: "Parțial noros",
+        3: "Noros",
+        45: "Ceață",
+        48: "Ceață cu chiciură",
+        51: "Burniță ușoară",
+        61: "Ploaie ușoară",
+        63: "Ploaie moderată",
+        65: "Ploaie puternică",
+        71: "Ninsoare ușoară",
+        73: "Ninsoare moderată",
+        75: "Ninsoare puternică",
+        80: "Ploaie torențială",
+        95: "Furtună"
+    };
+    return descriptions[code] || "Vreme variabilă";
+}
+
+function getWeatherEmoji(code) {
+    const emojis = {
+        0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
+        45: "🌫️", 48: "🌫️",
+        51: "🌧️", 61: "🌦️", 63: "🌧️", 65: "⛈️",
+        71: "❄️", 73: "❄️", 75: "❄️",
+        80: "🌧️", 95: "⛈️"
+    };
+    return emojis[code] || "☁️";
+}
+
+// Funcții de eroare și încărcare
 function showError(msg) {
-  const error = document.getElementById("errorMessage");
-  error.textContent = msg;
-  error.style.display = "block";
+    const error = document.getElementById("errorMessage");
+    error.textContent = msg;
+    error.style.display = "block";
 }
 
 function hideError() {
-  const error = document.getElementById("errorMessage");
-  error.style.display = "none";
+    const error = document.getElementById("errorMessage");
+    error.style.display = "none";
 }
 
-// Afișează date meteo curente
-function updateWeather(data) {
-  document.getElementById("cityName").textContent = data.name || data.city;
-  document.getElementById("temperature").textContent =
-    Math.round(data.main?.temp ?? data.temp) + "°C";
-  document.getElementById("condition").textContent =
-    data.weather?.[0]?.description ?? data.condition;
-  document.getElementById("humidity").textContent =
-    (data.main?.humidity ?? data.humidity) + "%";
-  document.getElementById("wind").textContent =
-    (data.wind?.speed ?? data.wind) + " km/h";
-  document.getElementById("pressure").textContent =
-    (data.main?.pressure ?? data.pressure) + " hPa";
-  document.getElementById("visibility").textContent =
-    ((data.visibility ?? data.visibility) / 1000).toFixed(1) + " km";
-  document.getElementById("feelsLike").textContent =
-    Math.round(data.main?.feels_like ?? data.feelsLike) + "°C";
-
-  // Icon meteo
-  if (data.weather && data.weather[0]?.icon) {
-    const iconCode = data.weather[0].icon;
-    document.getElementById("weatherIcon").innerHTML =
-      `<img src="https://openweathermap.org/img/wn/${iconCode}@2x.png" alt="icon">`;
-  } else if (data.icon) {
-    document.getElementById("weatherIcon").textContent = data.icon;
-  } else {
-    document.getElementById("weatherIcon").textContent = "";
-  }
-
-  hideError();
-}
-
-// Afișează forecast pe 5 zile (din API)
-function updateForecast(forecastList) {
-  const forecastGrid = document.getElementById("forecastGrid");
-  if (!forecastGrid || !forecastList) return;
-
-  // OpenWeather returnează forecast la fiecare 3h, selectăm doar ora 12:00
-  const daily = forecastList.filter(item => item.dt_txt.includes("12:00:00")).slice(0,5);
-
-  forecastGrid.innerHTML = daily
-    .map(day => `
-      <div class="forecast-day">
-        <div class="forecast-day-name">${new Date(day.dt_txt).toLocaleDateString('ro-RO', { weekday: 'long' })}</div>
-        <div class="forecast-icon"><img src="https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png" alt="icon"></div>
-        <div class="forecast-temp">${Math.round(day.main.temp_max)}°</div>
-        <div class="forecast-temp-min">${Math.round(day.main.temp_min)}°</div>
-      </div>
-    `)
-    .join("");
-}
-
-// Obține meteo curent + forecast live
-async function getWeather(city) {
-  showLoading(true);
-  hideError();
-
-  try {
-    // Meteo curent
-    const responseCurrent = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${API_KEY}&lang=ro`
-    );
-    if (!responseCurrent.ok) throw new Error("Orașul nu a fost găsit");
-
-    const dataCurrent = await responseCurrent.json();
-    updateWeather(dataCurrent);
-
-    // Forecast 5 zile
-    const responseForecast = await fetch(
-      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${API_KEY}&lang=ro`
-    );
-    if (!responseForecast.ok) throw new Error("Forecast indisponibil");
-    const dataForecast = await responseForecast.json();
-    updateForecast(dataForecast.list);
-
-    localStorage.setItem("lastCity", city);
-
-  } catch (error) {
-    console.warn("API eșuat, folosim fallback local:", error.message);
-
-    const key = city.toLowerCase();
-    if (weatherDatabase[key]) {
-      updateWeather(weatherDatabase[key]);
-      updateForecast(weatherDatabase[key].forecast);
-      localStorage.setItem("lastCity", city);
-    } else {
-      showError("Orașul nu a fost găsit în baza locală.");
-    }
-  } finally {
-    showLoading(false);
-  }
-}
-
-// Căutare oraș
+// Căutare după input
 function searchCity() {
-  const input = document.getElementById("searchInput").value.trim();
-  if (!input) return;
-  getWeather(input);
-  document.getElementById("searchInput").value = "";
+    const input = document.getElementById("searchInput").value.trim();
+    if (!input) return;
+    
+    // Verificăm dacă orașul există în lista noastră
+    if (cityCoordinates[input]) {
+        getWeather(input);
+    } else {
+        showError("Orașul nu este suportat. Folosește unul din butoane sau adaugă-l în listă.");
+    }
+    
+    document.getElementById("searchInput").value = "";
 }
 
-// Enter în input
 function handleKeyPress(event) {
-  if (event.key === "Enter") {
-    searchCity();
-  }
+    if (event.key === "Enter") {
+        searchCity();
+    }
 }
 
-// Init aplicație
-document.addEventListener("DOMContentLoaded", async () => {
-  await loadDatabase();
+// Selectare oraș din butoane
+function selectCity(city) {
+    // Eliminăm clasa active de la toate butoanele
+    document.querySelectorAll('.city-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent === city) btn.classList.add('active');
+    });
+    
+    getWeather(city);
+}
 
-  const lastCity = localStorage.getItem("lastCity") || "București";
-  getWeather(lastCity);
+// Inițializare aplicație
+document.addEventListener("DOMContentLoaded", () => {
+    const lastCity = localStorage.getItem("lastCity") || "București";
+    
+    // Setăm butonul activ
+    document.querySelectorAll('.city-btn').forEach(btn => {
+        if (btn.textContent === lastCity) btn.classList.add('active');
+    });
 
-  const searchBtn = document.getElementById("searchBtn");
-  if (searchBtn) searchBtn.addEventListener("click", searchCity);
+    getWeather(lastCity);
 
-  const searchInput = document.getElementById("searchInput");
-  if (searchInput) searchInput.addEventListener("keypress", handleKeyPress);
+    // Event listeners
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) searchInput.addEventListener("keypress", handleKeyPress);
 });
