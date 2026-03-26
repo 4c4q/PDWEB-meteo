@@ -39,7 +39,6 @@ const cityCoordinates = {
     "Mangalia": { lat: 43.8167, lon: 28.5833 },
     "Medgidia": { lat: 44.2500, lon: 28.2667 },
     "Roman": { lat: 46.9167, lon: 26.9167 }
-    // Poți adăuga și mai multe orașe mai mici dacă vrei
 };
 
 // Funcție principală - ia vremea live de la Open-Meteo
