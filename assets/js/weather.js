@@ -1,125 +1,101 @@
 let refreshInterval;
 
-// 1. Funcția Principală de Căutare (Geocoding + Weather)
 async function searchGlobalWeather(cityName) {
     if (!cityName) return;
-    
-    hideError();
-    console.log(`Căutăm pe glob: ${cityName}`);
+    const errorEl = document.getElementById("errorMessage");
+    errorEl.style.display = "none";
 
     try {
-        // PAS 1: Geocoding (Transformăm numele în Latitudine/Longitudine)
-        // Folosim API-ul gratuit de la Open-Meteo pentru geocoding
         const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=ro&format=json`;
         const geoResponse = await fetch(geoUrl);
         const geoData = await geoResponse.json();
 
-        if (!geoData.results || geoData.results.length === 0) {
-            showError(`Orașul "${cityName}" nu a fost găsit.`);
+        if (!geoData.results) {
+            errorEl.textContent = "Orașul nu a fost găsit!";
+            errorEl.style.display = "block";
             return;
         }
 
-        const location = geoData.results[0];
-        const { latitude, longitude, name, country } = location;
-        const displayName = `${name}, ${country}`;
-
-        // PAS 2: Pornim actualizarea Live pentru aceste coordonate
-        startLiveUpdates(latitude, longitude, displayName);
+        const { latitude, longitude, name, country } = geoData.results[0];
+        const fullName = `${name}, ${country || ""}`;
         
-        // Salvăm ultima căutare
-        localStorage.setItem("lastGlobalCity", cityName);
+        updateActiveButton(name);
+        startLiveUpdates(latitude, longitude, fullName);
+        localStorage.setItem("lastCity", cityName);
 
-    } catch (error) {
-        console.error("Eroare la căutarea globală:", error);
-        showError("Eroare de conexiune. Încearcă din nou.");
+    } catch (e) {
+        errorEl.textContent = "Eroare de conexiune!";
+        errorEl.style.display = "block";
     }
 }
 
-// 2. Gestionarea Actualizărilor Live
-function startLiveUpdates(lat, lon, displayName) {
+function startLiveUpdates(lat, lon, name) {
     if (refreshInterval) clearInterval(refreshInterval);
-
-    // Prima descărcare
-    fetchWeather(lat, lon, displayName);
-
-    // Actualizare la fiecare 10 minute
-    refreshInterval = setInterval(() => {
-        fetchWeather(lat, lon, displayName);
-    }, 600000);
+    fetchWeather(lat, lon, name);
+    refreshInterval = setInterval(() => fetchWeather(lat, lon, name), 600000);
 }
 
-// 3. Obținerea datelor meteo reale
-async function fetchWeather(lat, lon, displayName) {
+async function fetchWeather(lat, lon, name) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,visibility&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`;
+    
     try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`;
-        const response = await fetch(url);
-        const data = await response.json();
-
-        updateUI(data, displayName);
-    } catch (error) {
-        console.error("Eroare la preluarea vremii:", error);
-    }
+        const resp = await fetch(url);
+        const data = await resp.json();
+        updateUI(data, name);
+    } catch (e) { console.error("Meteo error", e); }
 }
 
-// 4. Actualizarea Interfeței
-function updateUI(data, displayName) {
+function updateUI(data, name) {
     const current = data.current;
-    const now = new Date().toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
-
-    document.getElementById("cityName").textContent = displayName;
+    document.getElementById("cityName").textContent = name;
     document.getElementById("temperature").textContent = Math.round(current.temperature_2m) + "°C";
     document.getElementById("condition").textContent = getDesc(current.weather_code);
     document.getElementById("weatherIcon").textContent = getEmoji(current.weather_code);
+    
     document.getElementById("humidity").textContent = current.relative_humidity_2m + "%";
     document.getElementById("wind").textContent = Math.round(current.wind_speed_10m) + " km/h";
     document.getElementById("feelsLike").textContent = Math.round(current.apparent_temperature) + "°C";
+    document.getElementById("visibility").textContent = (current.visibility / 1000).toFixed(0) + " km";
+    
+    document.getElementById("lastUpdated").textContent = "Live: " + new Date().toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'});
 
-    const updateEl = document.getElementById("lastUpdated");
-    if (updateEl) updateEl.textContent = `Live: ${now}`;
-
-    // Update Prognoză
-    const grid = document.getElementById("forecastGrid");
-    if (grid) {
-        grid.innerHTML = data.daily.time.slice(0, 5).map((time, i) => `
+    const forecastGrid = document.getElementById("forecastGrid");
+    forecastGrid.innerHTML = "";
+    for(let i=0; i<5; i++) {
+        const day = new Date(data.daily.time[i]).toLocaleDateString('ro-RO', {weekday: 'short'});
+        forecastGrid.innerHTML += `
             <div class="forecast-day">
-                <div>${new Date(time).toLocaleDateString('ro-RO', { weekday: 'short' })}</div>
-                <div style="font-size:1.5rem">${getEmoji(data.daily.weather_code[i])}</div>
-                <div>${Math.round(data.daily.temperature_2m_max[i])}°</div>
+                <span class="forecast-day-name">${day}</span>
+                <span class="forecast-icon">${getEmoji(data.daily.weather_code[i])}</span>
+                <span class="forecast-temp">${Math.round(data.daily.temperature_2m_max[i])}°</span>
             </div>
-        `).join('');
+        `;
     }
 }
 
-// Helpers
 function getDesc(c) {
-    const d = {0:"Senin", 1:"Predominant senin", 2:"Parțial noros", 3:"Noros", 45:"Ceață", 61:"Ploaie", 71:"Zăpadă", 95:"Furtună"};
+    const d={0:"Senin",1:"Mai mult senin",2:"Parțial noros",3:"Noros",45:"Ceață",61:"Ploaie",95:"Furtună"};
     return d[c] || "Variabil";
 }
+
 function getEmoji(c) {
-    const e = {0:"☀️", 1:"🌤️", 2:"⛅", 3:"☁️", 45:"🌫️", 61:"🌧️", 71:"❄️", 95:"⛈️"};
+    const e={0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",61:"🌧️",95:"⛈️"};
     return e[c] || "☁️";
 }
-function showError(msg) {
-    const err = document.getElementById("errorMessage");
-    if (err) { err.textContent = msg; err.style.display = "block"; }
-}
-function hideError() {
-    const err = document.getElementById("errorMessage");
-    if (err) err.style.display = "none";
+
+function updateActiveButton(name) {
+    document.querySelectorAll('.city-btn').forEach(b => {
+        b.classList.toggle('active', b.textContent.toLowerCase() === name.toLowerCase());
+    });
 }
 
-// Funcții Globale pentru butoane/search
-window.selectCity = (name) => searchGlobalWeather(name);
+window.selectCity = (n) => searchGlobalWeather(n);
 window.searchCity = () => {
-    const input = document.getElementById("searchInput");
-    if (input) {
-        searchGlobalWeather(input.value.trim());
-        input.value = "";
-    }
-};
+    searchGlobalWeather(document.getElementById("searchInput").value);
+    document.getElementById("searchInput").value = "";
+}
 
-// Inițializare
+// Start
 document.addEventListener("DOMContentLoaded", () => {
-    const last = localStorage.getItem("lastGlobalCity") || "București";
-    searchGlobalWeather(last);
+    searchGlobalWeather(localStorage.getItem("lastCity") || "București");
 });
