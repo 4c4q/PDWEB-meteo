@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vremea Globală Live</title>
+    <title>Vremea Globală Pro</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
@@ -11,22 +11,22 @@
         <h1>🌤️ Vremea Globală</h1>
         
         <div class="search-box">
-            <input type="text" class="search-input" id="searchInput" placeholder="Caută un oraș...">
+            <input type="text" class="search-input" id="searchInput" placeholder="Caută un oraș (ex: Iași, Londra)...">
             <button class="search-btn" onclick="searchCity()">Caută</button>
         </div>
 
         <div class="city-buttons">
             <button class="city-btn active" onclick="selectCity('București')">București</button>
-            <button class="city-btn" onclick="selectCity('Cluj-Napoca')">Cluj-Napoca</button>
             <button class="city-btn" onclick="selectCity('Iași')">Iași</button>
-            <button class="city-btn" onclick="selectCity('Paris')">Paris</button>
+            <button class="city-btn" onclick="selectCity('Cluj-Napoca')">Cluj-Napoca</button>
+            <button class="city-btn" onclick="selectCity('Londra')">Londra</button>
         </div>
 
         <div id="errorMessage" class="error-message"></div>
 
-        <div class="glass-card">
+        <div class="glass-card main-weather-card">
             <div class="weather-main">
-                <div>
+                <div class="main-info">
                     <h2 class="city-name" id="cityName">Se încarcă...</h2>
                     <span id="lastUpdated"></span>
                     <div class="temperature" id="temperature">--°C</div>
@@ -36,15 +36,41 @@
             </div>
         </div>
 
-        <div class="glass-card">
-            <div class="details-grid">
-                <div class="detail-item"><div>💧 Umiditate</div><div id="humidity">--%</div></div>
-                <div class="detail-item"><div>💨 Vânt</div><div id="wind">-- km/h</div></div>
-                <div class="detail-item"><div>🌡️ Resimțită</div><div id="feelsLike">--°C</div></div>
+        <div class="details-grid">
+            <div class="detail-item">
+                <span class="detail-icon">💧</span>
+                <div class="detail-info">
+                    <span class="detail-label">Umiditate</span>
+                    <span class="detail-value" id="humidity">--%</span>
+                </div>
+            </div>
+            
+            <div class="detail-item">
+                <span class="detail-icon">💨</span>
+                <div class="detail-info">
+                    <span class="detail-label">Vânt</span>
+                    <span class="detail-value" id="wind">-- km/h</span>
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <span class="detail-icon">👁️</span>
+                <div class="detail-info">
+                    <span class="detail-label">Vizibilitate</span>
+                    <span class="detail-value" id="visibility">-- km</span>
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <span class="detail-icon">🌡️</span>
+                <div class="detail-info">
+                    <span class="detail-label">Senzație</span>
+                    <span class="detail-value" id="feelsLike">--°C</span>
+                </div>
             </div>
         </div>
 
-        <div class="glass-card">
+        <div class="glass-card forecast-container">
             <h3 class="forecast-title">📅 Prognoza pe 5 zile</h3>
             <div class="forecast-grid" id="forecastGrid"></div>
         </div>
