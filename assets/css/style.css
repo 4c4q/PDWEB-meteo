@@ -1,6 +1,5 @@
 /* RESET */
 * { margin: 0; padding: 0; box-sizing: border-box; }
-
 body {
     font-family: 'Segoe UI', Roboto, sans-serif;
     min-height: 100vh;
@@ -8,9 +7,7 @@ body {
     background: linear-gradient(135deg, #1e3a8a, #3b82f6);
     color: white;
 }
-
 .container { max-width: 800px; margin: auto; }
-
 h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
 
 /* SEARCH */
@@ -43,6 +40,21 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
     margin-bottom: 20px;
 }
 
+/* MAIN WEATHER CARD */
+.main-weather-card { }
+
+.main-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.condition {
+    font-size: 1.1rem;
+    opacity: 0.85;
+    margin-top: 5px;
+}
+
 /* MAIN WEATHER */
 .weather-main { display: flex; justify-content: space-between; align-items: center; }
 .temperature { font-size: 4.5rem; font-weight: bold; line-height: 1; margin: 10px 0; }
@@ -57,7 +69,6 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
     gap: 15px;
     margin-bottom: 20px;
 }
-
 .detail-item {
     background: rgba(255, 255, 255, 0.12);
     padding: 20px;
@@ -67,20 +78,27 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
     gap: 15px;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
-
 .detail-icon { font-size: 2.2rem; }
 .detail-info { display: flex; flex-direction: column; }
 .detail-label { font-size: 0.75rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 0.5px; }
 .detail-value { font-size: 1.4rem; font-weight: bold; }
 
 /* PROGNOZA */
+.forecast-container { }
+
+.forecast-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    opacity: 0.9;
+}
+
 .forecast-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 10px;
     margin-top: 15px;
 }
-
 .forecast-day {
     background: rgba(255, 255, 255, 0.08);
     padding: 15px 5px;
@@ -91,7 +109,6 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
     align-items: center;
     gap: 5px;
 }
-
 .forecast-day-name { font-size: 0.9rem; font-weight: bold; text-transform: uppercase; }
 .forecast-icon { font-size: 1.5rem; }
 .forecast-temp { font-weight: bold; }
