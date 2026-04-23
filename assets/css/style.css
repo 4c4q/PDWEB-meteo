@@ -14,19 +14,26 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
 .search-box { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
 .search-input { 
     padding: 12px 20px; border-radius: 25px; border: none; width: 100%; max-width: 300px; 
-    font-size: 1rem; outline: none; background: rgba(255,255,255,0.9);
+    font-size: 1rem; outline: none; background: rgba(255,255,255,0.9); color: #333;
 }
 .search-btn { 
     padding: 12px 25px; border-radius: 25px; border: none; background: #f97316; 
     color: white; font-weight: bold; cursor: pointer; transition: 0.3s;
 }
 .search-btn:hover { background: #ea580c; transform: scale(1.05); }
+.gps-btn {
+    padding: 12px 15px; border-radius: 25px; border: none;
+    background: rgba(255,255,255,0.2); color: white;
+    font-size: 1.2rem; cursor: pointer; transition: 0.3s;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+.gps-btn:hover { background: rgba(255,255,255,0.35); transform: scale(1.05); }
 
 /* CITY BUTTONS */
 .city-buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 25px; }
 .city-btn { 
     padding: 8px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.3);
-    background: rgba(255,255,255,0.1); color: white; cursor: pointer; 
+    background: rgba(255,255,255,0.1); color: white; cursor: pointer; transition: 0.3s;
 }
 .city-btn.active { background: white; color: #1e3a8a; font-weight: bold; }
 
@@ -42,18 +49,8 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
 
 /* MAIN WEATHER CARD */
 .main-weather-card { }
-
-.main-info {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.condition {
-    font-size: 1.1rem;
-    opacity: 0.85;
-    margin-top: 5px;
-}
+.main-info { display: flex; flex-direction: column; gap: 5px; }
+.condition { font-size: 1.1rem; opacity: 0.85; margin-top: 5px; }
 
 /* MAIN WEATHER */
 .weather-main { display: flex; justify-content: space-between; align-items: center; }
@@ -85,14 +82,7 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
 
 /* PROGNOZA */
 .forecast-container { }
-
-.forecast-title {
-    font-size: 1.1rem;
-    font-weight: bold;
-    margin-bottom: 10px;
-    opacity: 0.9;
-}
-
+.forecast-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; opacity: 0.9; }
 .forecast-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -113,6 +103,15 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
 .forecast-icon { font-size: 1.5rem; }
 .forecast-temp { font-weight: bold; }
 
+/* HARTA */
+.map-container { }
+#map {
+    height: 300px;
+    border-radius: 15px;
+    margin-top: 10px;
+    z-index: 1;
+}
+
 /* ERROR */
 .error-message { 
     background: rgba(220, 38, 38, 0.4); padding: 10px; border-radius: 10px; 
@@ -123,4 +122,5 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
 @media (max-width: 600px) {
     .forecast-grid { grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); }
     .temperature { font-size: 3rem; }
+    #map { height: 220px; }
 }
