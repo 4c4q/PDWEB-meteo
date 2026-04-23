@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vremea Globală Pro</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
     <div class="container">
@@ -13,6 +15,7 @@
         <div class="search-box">
             <input type="text" class="search-input" id="searchInput" placeholder="Caută un oraș (ex: Iași, Londra)...">
             <button class="search-btn" onclick="searchCity()">Caută</button>
+            <button class="gps-btn" onclick="getGPSLocation()" title="Locație automată">📍</button>
         </div>
 
         <div class="city-buttons">
@@ -44,7 +47,6 @@
                     <span class="detail-value" id="humidity">--%</span>
                 </div>
             </div>
-            
             <div class="detail-item">
                 <span class="detail-icon">💨</span>
                 <div class="detail-info">
@@ -52,7 +54,6 @@
                     <span class="detail-value" id="wind">-- km/h</span>
                 </div>
             </div>
-
             <div class="detail-item">
                 <span class="detail-icon">👁️</span>
                 <div class="detail-info">
@@ -60,7 +61,6 @@
                     <span class="detail-value" id="visibility">-- km</span>
                 </div>
             </div>
-
             <div class="detail-item">
                 <span class="detail-icon">🌡️</span>
                 <div class="detail-info">
@@ -74,6 +74,12 @@
             <h3 class="forecast-title">📅 Prognoza pe 5 zile</h3>
             <div class="forecast-grid" id="forecastGrid"></div>
         </div>
+
+        <div class="glass-card map-container">
+            <h3 class="forecast-title">🗺️ Locație oraș</h3>
+            <div id="map"></div>
+        </div>
+
     </div>
     
     <script src="assets/js/weather.js"></script>
