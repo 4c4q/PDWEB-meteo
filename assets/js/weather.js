@@ -1,4 +1,6 @@
 let refreshInterval;
+let map = null;
+let marker = null;
 
 function setBackgroundByWeather(weatherCode) {
     const gradients = {
@@ -10,9 +12,58 @@ function setBackgroundByWeather(weatherCode) {
         61: "linear-gradient(135deg, #1e3a5f, #2563eb)",
         95: "linear-gradient(135deg, #1a1a2e, #4a0080)",
     };
-
     const gradient = gradients[weatherCode] || "linear-gradient(135deg, #1e3a8a, #3b82f6)";
     document.body.setAttribute("style", `background: ${gradient} !important; transition: background 1s ease;`);
+}
+
+function updateMap(lat, lon, name) {
+    if (!map) {
+        map = L.map('map').setView([lat, lon], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+    } else {
+        map.setView([lat, lon], 11);
+    }
+
+    if (marker) marker.remove();
+    marker = L.marker([lat, lon])
+        .addTo(map)
+        .bindPopup(`<b>${name}</b>`)
+        .openPopup();
+}
+
+function getGPSLocation() {
+    const errorEl = document.getElementById("errorMessage");
+    if (!navigator.geolocation) {
+        errorEl.textContent = "GPS-ul nu este suportat de browserul tău!";
+        errorEl.style.display = "block";
+        return;
+    }
+    errorEl.style.display = "none";
+    document.getElementById("cityName").textContent = "Se detectează locația...";
+
+    navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+            const { latitude, longitude } = pos.coords;
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+                const data = await res.json();
+                const name = data.address.city || data.address.town || data.address.village || "Locația ta";
+                const country = data.address.country || "";
+                const fullName = `${name}, ${country}`;
+                updateActiveButton("");
+                startLiveUpdates(latitude, longitude, fullName);
+                localStorage.setItem("lastCity", name);
+            } catch (e) {
+                startLiveUpdates(latitude, longitude, "Locația ta");
+            }
+        },
+        () => {
+            errorEl.textContent = "Nu s-a putut accesa locația. Verifică permisiunile browserului!";
+            errorEl.style.display = "block";
+        }
+    );
 }
 
 async function searchGlobalWeather(cityName) {
@@ -56,13 +107,14 @@ async function fetchWeather(lat, lon, name) {
     try {
         const resp = await fetch(url);
         const data = await resp.json();
-        updateUI(data, name);
+        updateUI(data, name, lat, lon);
     } catch (e) { console.error("Meteo error", e); }
 }
 
-function updateUI(data, name) {
+function updateUI(data, name, lat, lon) {
     const current = data.current;
     setBackgroundByWeather(current.weather_code);
+    updateMap(lat, lon, name);
 
     document.getElementById("cityName").textContent = name;
     document.getElementById("temperature").textContent = Math.round(current.temperature_2m) + "°C";
@@ -78,7 +130,7 @@ function updateUI(data, name) {
 
     const forecastGrid = document.getElementById("forecastGrid");
     forecastGrid.innerHTML = "";
-    for(let i=0; i<5; i++) {
+    for(let i = 0; i < 5; i++) {
         const day = new Date(data.daily.time[i]).toLocaleDateString('ro-RO', {weekday: 'short'});
         forecastGrid.innerHTML += `
             <div class="forecast-day">
@@ -91,12 +143,12 @@ function updateUI(data, name) {
 }
 
 function getDesc(c) {
-    const d={0:"Senin",1:"Mai mult senin",2:"Parțial noros",3:"Noros",45:"Ceață",61:"Ploaie",95:"Furtună"};
+    const d = {0:"Senin",1:"Mai mult senin",2:"Parțial noros",3:"Noros",45:"Ceață",61:"Ploaie",95:"Furtună"};
     return d[c] || "Variabil";
 }
 
 function getEmoji(c) {
-    const e={0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",61:"🌧️",95:"⛈️"};
+    const e = {0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",61:"🌧️",95:"⛈️"};
     return e[c] || "☁️";
 }
 
@@ -111,8 +163,8 @@ window.searchCity = () => {
     searchGlobalWeather(document.getElementById("searchInput").value);
     document.getElementById("searchInput").value = "";
 }
+window.getGPSLocation = getGPSLocation;
 
-// Start
 document.addEventListener("DOMContentLoaded", () => {
     searchGlobalWeather(localStorage.getItem("lastCity") || "București");
 });
