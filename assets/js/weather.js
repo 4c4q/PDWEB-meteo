@@ -60,7 +60,7 @@ function getGPSLocation() {
             }
         },
         () => {
-            errorEl.textContent = "Nu s-a putut accesa locația. Verifică permisiunile browserului!";
+            errorEl.textContent = "Nu s-a putut accesa locația!";
             errorEl.style.display = "block";
         }
     );
@@ -158,13 +158,31 @@ function updateActiveButton(name) {
     });
 }
 
-window.selectCity = (n) => searchGlobalWeather(n);
-window.searchCity = () => {
-    searchGlobalWeather(document.getElementById("searchInput").value);
-    document.getElementById("searchInput").value = "";
-}
-window.getGPSLocation = getGPSLocation;
-
 document.addEventListener("DOMContentLoaded", () => {
+    // Butoane orase
+    document.querySelectorAll('.city-btn').forEach(btn => {
+        btn.addEventListener('click', () => searchGlobalWeather(btn.textContent));
+    });
+
+    // Buton cautare
+    document.querySelector('.search-btn').addEventListener('click', () => {
+        const val = document.getElementById("searchInput").value;
+        document.getElementById("searchInput").value = "";
+        searchGlobalWeather(val);
+    });
+
+    // Buton GPS
+    document.querySelector('.gps-btn').addEventListener('click', getGPSLocation);
+
+    // Enter in input
+    document.getElementById("searchInput").addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const val = e.target.value;
+            e.target.value = "";
+            searchGlobalWeather(val);
+        }
+    });
+
+    // Start
     searchGlobalWeather(localStorage.getItem("lastCity") || "București");
 });
