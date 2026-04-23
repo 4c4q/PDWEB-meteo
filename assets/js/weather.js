@@ -12,7 +12,7 @@ function setBackgroundByWeather(weatherCode) {
     };
 
     const gradient = gradients[weatherCode] || "linear-gradient(135deg, #1e3a8a, #3b82f6)";
-    document.body.style.background = gradient;
+    document.body.setAttribute("style", `background: ${gradient} !important; transition: background 1s ease;`);
 }
 
 async function searchGlobalWeather(cityName) {
@@ -62,7 +62,7 @@ async function fetchWeather(lat, lon, name) {
 
 function updateUI(data, name) {
     const current = data.current;
-    setBackgroundByWeather(current.weather_code); // 👈 linia adăugată
+    setBackgroundByWeather(current.weather_code);
 
     document.getElementById("cityName").textContent = name;
     document.getElementById("temperature").textContent = Math.round(current.temperature_2m) + "°C";
