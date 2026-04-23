@@ -1,5 +1,20 @@
 let refreshInterval;
 
+function setBackgroundByWeather(weatherCode) {
+    const gradients = {
+        0:  "linear-gradient(135deg, #1e3a8a, #3b82f6)",
+        1:  "linear-gradient(135deg, #1e40af, #60a5fa)",
+        2:  "linear-gradient(135deg, #374151, #6b7280)",
+        3:  "linear-gradient(135deg, #1f2937, #4b5563)",
+        45: "linear-gradient(135deg, #292524, #78716c)",
+        61: "linear-gradient(135deg, #1e3a5f, #2563eb)",
+        95: "linear-gradient(135deg, #1a1a2e, #4a0080)",
+    };
+
+    const gradient = gradients[weatherCode] || "linear-gradient(135deg, #1e3a8a, #3b82f6)";
+    document.body.style.background = gradient;
+}
+
 async function searchGlobalWeather(cityName) {
     if (!cityName) return;
     const errorEl = document.getElementById("errorMessage");
@@ -47,6 +62,8 @@ async function fetchWeather(lat, lon, name) {
 
 function updateUI(data, name) {
     const current = data.current;
+    setBackgroundByWeather(current.weather_code); // 👈 linia adăugată
+
     document.getElementById("cityName").textContent = name;
     document.getElementById("temperature").textContent = Math.round(current.temperature_2m) + "°C";
     document.getElementById("condition").textContent = getDesc(current.weather_code);
