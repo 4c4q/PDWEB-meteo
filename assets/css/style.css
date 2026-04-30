@@ -47,12 +47,9 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
     margin-bottom: 20px;
 }
 
-/* MAIN WEATHER CARD */
-.main-weather-card { }
+/* MAIN WEATHER */
 .main-info { display: flex; flex-direction: column; gap: 5px; }
 .condition { font-size: 1.1rem; opacity: 0.85; margin-top: 5px; }
-
-/* MAIN WEATHER */
 .weather-main { display: flex; justify-content: space-between; align-items: center; }
 .temperature { font-size: 4.5rem; font-weight: bold; line-height: 1; margin: 10px 0; }
 .city-name { font-size: 1.8rem; }
@@ -80,8 +77,85 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
 .detail-label { font-size: 0.75rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 0.5px; }
 .detail-value { font-size: 1.4rem; font-weight: bold; }
 
-/* PROGNOZA */
-.forecast-container { }
+/* ======================== */
+/* PROGNOZĂ ORARĂ    */
+/* ======================== */
+.hourly-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.live-badge {
+    font-size: 0.75rem;
+    font-weight: bold;
+    background: rgba(255, 80, 80, 0.25);
+    border: 1px solid rgba(255, 80, 80, 0.5);
+    color: #fca5a5;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.hourly-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.3) transparent;
+}
+.hourly-scroll::-webkit-scrollbar { height: 5px; }
+.hourly-scroll::-webkit-scrollbar-track { background: transparent; }
+.hourly-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
+
+.hourly-item {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 12px 14px;
+    min-width: 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    transition: background 0.3s, transform 0.2s;
+}
+.hourly-item:hover {
+    background: rgba(255, 255, 255, 0.18);
+    transform: translateY(-3px);
+}
+.hourly-item.current-hour {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 16px rgba(255,255,255,0.15);
+}
+
+.hourly-time {
+    font-size: 0.78rem;
+    opacity: 0.75;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+.hourly-item.current-hour .hourly-time {
+    color: #fde68a;
+    opacity: 1;
+    font-size: 0.72rem;
+}
+
+.hourly-icon { font-size: 1.4rem; }
+.hourly-temp { font-size: 1rem; font-weight: bold; }
+.hourly-rain { font-size: 0.72rem; opacity: 0.7; color: #93c5fd; }
+
+/* PROGNOZA 5 ZILE */
 .forecast-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; opacity: 0.9; }
 .forecast-grid {
     display: grid;
@@ -104,7 +178,6 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
 .forecast-temp { font-weight: bold; }
 
 /* HARTA */
-.map-container { }
 #map {
     height: 300px;
     border-radius: 15px;
@@ -123,4 +196,5 @@ h1 { text-align: center; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0
     .forecast-grid { grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); }
     .temperature { font-size: 3rem; }
     #map { height: 220px; }
+    .hourly-item { min-width: 62px; padding: 10px 10px; }
 }
