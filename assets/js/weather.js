@@ -98,11 +98,17 @@ async function searchGlobalWeather(cityName) {
 function startLiveUpdates(lat, lon, name) {
     if (refreshInterval) clearInterval(refreshInterval);
     fetchWeather(lat, lon, name);
+    // Refresh la fiecare 10 minute
     refreshInterval = setInterval(() => fetchWeather(lat, lon, name), 600000);
 }
 
 async function fetchWeather(lat, lon, name) {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,visibility&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`;
+    // Am adăugat &hourly= pentru prognoza orară
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+        `&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,visibility` +
+        `&hourly=temperature_2m,weather_code,precipitation_probability` +
+        `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
+        `&timezone=auto&forecast_days=2`;
     
     try {
         const resp = await fetch(url);
@@ -128,9 +134,13 @@ function updateUI(data, name, lat, lon) {
     
     document.getElementById("lastUpdated").textContent = "Live: " + new Date().toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'});
 
+    // Prognoza orara (NOU)
+    updateHourlyForecast(data);
+
+    // Prognoza 5 zile
     const forecastGrid = document.getElementById("forecastGrid");
     forecastGrid.innerHTML = "";
-    for(let i = 0; i < 5; i++) {
+    for (let i = 0; i < 5; i++) {
         const day = new Date(data.daily.time[i]).toLocaleDateString('ro-RO', {weekday: 'short'});
         forecastGrid.innerHTML += `
             <div class="forecast-day">
@@ -140,6 +150,63 @@ function updateUI(data, name, lat, lon) {
             </div>
         `;
     }
+}
+
+// ================================
+// FUNCȚIE NOUĂ - Prognoză orară
+// ================================
+function updateHourlyForecast(data) {
+    const hourlyScroll = document.getElementById("hourlyScroll");
+    if (!hourlyScroll) return;
+
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    const times = data.hourly.time;
+    const temps = data.hourly.temperature_2m;
+    const codes = data.hourly.weather_code;
+    const rainProb = data.hourly.precipitation_probability;
+
+    // Găsim indexul orei curente în array
+    let startIndex = 0;
+    for (let i = 0; i < times.length; i++) {
+        const itemDate = new Date(times[i]);
+        if (itemDate.toDateString() === now.toDateString() && itemDate.getHours() === currentHour) {
+            startIndex = i;
+            break;
+        }
+    }
+
+    hourlyScroll.innerHTML = "";
+
+    // Afișăm 24 ore începând de la ora curentă
+    const count = Math.min(24, times.length - startIndex);
+    for (let j = 0; j < count; j++) {
+        const idx = startIndex + j;
+        const itemDate = new Date(times[idx]);
+        const hour = itemDate.getHours();
+        const isCurrent = j === 0;
+
+        const timeLabel = isCurrent
+            ? "Acum"
+            : hour.toString().padStart(2, "0") + ":00";
+
+        const rain = rainProb ? rainProb[idx] : null;
+        const rainHtml = rain !== null
+            ? `<span class="hourly-rain">💧${rain}%</span>`
+            : "";
+
+        hourlyScroll.innerHTML += `
+            <div class="hourly-item ${isCurrent ? "current-hour" : ""}">
+                <span class="hourly-time">${timeLabel}</span>
+                <span class="hourly-icon">${getEmoji(codes[idx])}</span>
+                <span class="hourly-temp">${Math.round(temps[idx])}°C</span>
+                ${rainHtml}
+            </div>
+        `;
+    }
+
+    hourlyScroll.scrollLeft = 0;
 }
 
 function getDesc(c) {
@@ -159,22 +226,18 @@ function updateActiveButton(name) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Butoane orase
     document.querySelectorAll('.city-btn').forEach(btn => {
         btn.addEventListener('click', () => searchGlobalWeather(btn.textContent));
     });
 
-    // Buton cautare
     document.querySelector('.search-btn').addEventListener('click', () => {
         const val = document.getElementById("searchInput").value;
         document.getElementById("searchInput").value = "";
         searchGlobalWeather(val);
     });
 
-    // Buton GPS
     document.querySelector('.gps-btn').addEventListener('click', getGPSLocation);
 
-    // Enter in input
     document.getElementById("searchInput").addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             const val = e.target.value;
@@ -183,6 +246,5 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Start
     searchGlobalWeather(localStorage.getItem("lastCity") || "București");
 });
