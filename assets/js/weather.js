@@ -21,18 +21,24 @@ function setBackgroundByWeather(weatherCode) {
 
     const gradient = gradients[weatherCode] || "linear-gradient(135deg, #1e3a8a, #3b82f6)";
 
-    let overlay = document.getElementById("bg-overlay");
-    if (!overlay) {
-        overlay = document.createElement("div");
-        overlay.id = "bg-overlay";
-        document.body.prepend(overlay);
-    }
+    const layerA = document.getElementById("bg-layer-a");
+    const layerB = document.getElementById("bg-layer-b");
 
-    overlay.style.opacity = "0";
-    setTimeout(() => {
-        overlay.style.background = gradient;
-        overlay.style.opacity = "1";
-    }, 450);
+    const aIsActive = layerA.style.zIndex !== "-2";
+    const incoming = aIsActive ? layerB : layerA;
+    const outgoing = aIsActive ? layerA : layerB;
+
+    // Punem noul gradient pe layerul din spate
+    incoming.style.background = gradient;
+    incoming.style.zIndex = "-1";
+    outgoing.style.zIndex = "-2";
+
+    // Triggeruim reflow
+    incoming.getBoundingClientRect();
+
+    // Crossfade
+    incoming.style.opacity = "1";
+    outgoing.style.opacity = "0";
 }
 
 function updateMap(lat, lon, name) {
