@@ -19,7 +19,7 @@ body {
 #bg-layer-b {
     position: fixed;
     inset: 0;
-    transition: opacity 1.4s ease;
+    transition: opacity 3s ease;
     pointer-events: none;
 }
 
