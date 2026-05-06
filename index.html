@@ -10,6 +10,8 @@
     <script src="assets/js/weather.js" defer></script>
 </head>
 <body>
+    <div id="bg-overlay"></div>
+
     <div class="container">
         <h1>🌤️ Vremea Globală</h1>
         
@@ -18,16 +20,13 @@
             <button class="search-btn">Caută</button>
             <button class="gps-btn" title="Locație automată">📍</button>
         </div>
-
         <div class="city-buttons">
             <button class="city-btn active">București</button>
             <button class="city-btn">Iași</button>
             <button class="city-btn">Cluj-Napoca</button>
             <button class="city-btn">Londra</button>
         </div>
-
         <div id="errorMessage" class="error-message"></div>
-
         <div class="glass-card main-weather-card">
             <div class="weather-main">
                 <div class="main-info">
@@ -39,7 +38,6 @@
                 <div class="weather-icon" id="weatherIcon">⏳</div>
             </div>
         </div>
-
         <div class="details-grid">
             <div class="detail-item">
                 <span class="detail-icon">💧</span>
@@ -70,23 +68,17 @@
                 </div>
             </div>
         </div>
-
-        <!--PROGNOZĂ ORARĂ-->
         <div class="glass-card hourly-container">
             <div class="hourly-header">
                 <h3 class="forecast-title">🕐 Prognoză orară</h3>
                 <span class="live-badge">🔴 LIVE</span>
             </div>
-            <div class="hourly-scroll" id="hourlyScroll">
-                <!--Completat dinamic de JS-->
-            </div>
+            <div class="hourly-scroll" id="hourlyScroll"></div>
         </div>
-
         <div class="glass-card forecast-container">
             <h3 class="forecast-title">📅 Prognoza pe 5 zile</h3>
             <div class="forecast-grid" id="forecastGrid"></div>
         </div>
-
         <div class="glass-card map-container">
             <h3 class="forecast-title">🗺️ Locație oraș</h3>
             <div id="map"></div>
