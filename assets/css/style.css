@@ -12,6 +12,8 @@ body {
     padding: 28px 20px;
     color: white;
     overflow-x: hidden;
+    text-size-adjust: none;
+    -webkit-text-size-adjust: none;
 }
 
 /* ── CROSSFADE BACKGROUND ── */
@@ -173,7 +175,7 @@ h1 {
     font-family: 'Syne', sans-serif;
     font-size: 1.65rem;
     font-weight: 700;
-    letter-spacing: -0.5px;
+    letter-spacing: 0px;
 }
 
 .temperature {
@@ -182,7 +184,7 @@ h1 {
     font-weight: 800;
     line-height: 1;
     margin: 10px 0 6px;
-    letter-spacing: -3px;
+    letter-spacing: -1px;
 }
 
 .condition {
@@ -409,7 +411,7 @@ h1 {
 
 @media (max-width: 600px) {
     h1 { font-size: 1.3rem; }
-    .temperature { font-size: 3.5rem; letter-spacing: -2px; }
+    .temperature { font-size: 3.5rem; letter-spacing: -1px; }
     .weather-icon { font-size: 3.8rem; }
     .city-name { font-size: 1.3rem; }
     .glass-card { padding: 20px; }
