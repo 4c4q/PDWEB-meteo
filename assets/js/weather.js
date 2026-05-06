@@ -9,11 +9,30 @@ function setBackgroundByWeather(weatherCode) {
         2:  "linear-gradient(135deg, #374151, #6b7280)",
         3:  "linear-gradient(135deg, #1f2937, #4b5563)",
         45: "linear-gradient(135deg, #292524, #78716c)",
+        48: "linear-gradient(135deg, #292524, #78716c)",
+        51: "linear-gradient(135deg, #1e3a5f, #3b82f6)",
         61: "linear-gradient(135deg, #1e3a5f, #2563eb)",
+        63: "linear-gradient(135deg, #172554, #1d4ed8)",
+        71: "linear-gradient(135deg, #e2e8f0, #94a3b8)",
+        80: "linear-gradient(135deg, #1e3a5f, #0ea5e9)",
         95: "linear-gradient(135deg, #1a1a2e, #4a0080)",
+        99: "linear-gradient(135deg, #0f0f1a, #3b0066)",
     };
+
     const gradient = gradients[weatherCode] || "linear-gradient(135deg, #1e3a8a, #3b82f6)";
-    document.body.setAttribute("style", `background: ${gradient} !important; transition: background 1s ease;`);
+
+    let overlay = document.getElementById("bg-overlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "bg-overlay";
+        document.body.prepend(overlay);
+    }
+
+    overlay.style.opacity = "0";
+    setTimeout(() => {
+        overlay.style.background = gradient;
+        overlay.style.opacity = "1";
+    }, 450);
 }
 
 function updateMap(lat, lon, name) {
@@ -47,7 +66,9 @@ function getGPSLocation() {
         async (pos) => {
             const { latitude, longitude } = pos.coords;
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+                );
                 const data = await res.json();
                 const name = data.address.city || data.address.town || data.address.village || "Locația ta";
                 const country = data.address.country || "";
@@ -55,7 +76,7 @@ function getGPSLocation() {
                 updateActiveButton("");
                 startLiveUpdates(latitude, longitude, fullName);
                 localStorage.setItem("lastCity", name);
-            } catch (e) {
+            } catch {
                 startLiveUpdates(latitude, longitude, "Locația ta");
             }
         },
@@ -84,12 +105,12 @@ async function searchGlobalWeather(cityName) {
 
         const { latitude, longitude, name, country } = geoData.results[0];
         const fullName = `${name}, ${country || ""}`;
-        
+
         updateActiveButton(name);
         startLiveUpdates(latitude, longitude, fullName);
         localStorage.setItem("lastCity", cityName);
 
-    } catch (e) {
+    } catch {
         errorEl.textContent = "Eroare de conexiune!";
         errorEl.style.display = "block";
     }
@@ -98,27 +119,29 @@ async function searchGlobalWeather(cityName) {
 function startLiveUpdates(lat, lon, name) {
     if (refreshInterval) clearInterval(refreshInterval);
     fetchWeather(lat, lon, name);
-    // Refresh la fiecare 10 minute
     refreshInterval = setInterval(() => fetchWeather(lat, lon, name), 600000);
 }
 
 async function fetchWeather(lat, lon, name) {
-    // Am adăugat &hourly= pentru prognoza orară
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    const url =
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
         `&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,visibility` +
         `&hourly=temperature_2m,weather_code,precipitation_probability` +
         `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
-        `&timezone=auto&forecast_days=2`;
-    
+        `&timezone=auto&forecast_days=6`;
+
     try {
         const resp = await fetch(url);
         const data = await resp.json();
         updateUI(data, name, lat, lon);
-    } catch (e) { console.error("Meteo error", e); }
+    } catch (e) {
+        console.error("Meteo error", e);
+    }
 }
 
 function updateUI(data, name, lat, lon) {
     const current = data.current;
+
     setBackgroundByWeather(current.weather_code);
     updateMap(lat, lon, name);
 
@@ -126,48 +149,30 @@ function updateUI(data, name, lat, lon) {
     document.getElementById("temperature").textContent = Math.round(current.temperature_2m) + "°C";
     document.getElementById("condition").textContent = getDesc(current.weather_code);
     document.getElementById("weatherIcon").textContent = getEmoji(current.weather_code);
-    
+
     document.getElementById("humidity").textContent = current.relative_humidity_2m + "%";
     document.getElementById("wind").textContent = Math.round(current.wind_speed_10m) + " km/h";
     document.getElementById("feelsLike").textContent = Math.round(current.apparent_temperature) + "°C";
     document.getElementById("visibility").textContent = (current.visibility / 1000).toFixed(0) + " km";
-    
-    document.getElementById("lastUpdated").textContent = "Live: " + new Date().toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'});
 
-    // Prognoza orara (NOU)
+    document.getElementById("lastUpdated").textContent =
+        "Live: " + new Date().toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+
     updateHourlyForecast(data);
-
-    // Prognoza 5 zile
-    const forecastGrid = document.getElementById("forecastGrid");
-    forecastGrid.innerHTML = "";
-    for (let i = 0; i < 5; i++) {
-        const day = new Date(data.daily.time[i]).toLocaleDateString('ro-RO', {weekday: 'short'});
-        forecastGrid.innerHTML += `
-            <div class="forecast-day">
-                <span class="forecast-day-name">${day}</span>
-                <span class="forecast-icon">${getEmoji(data.daily.weather_code[i])}</span>
-                <span class="forecast-temp">${Math.round(data.daily.temperature_2m_max[i])}°</span>
-            </div>
-        `;
-    }
+    updateDailyForecast(data);
 }
 
-// ================================
-// FUNCȚIE NOUĂ - Prognoză orară
-// ================================
 function updateHourlyForecast(data) {
     const hourlyScroll = document.getElementById("hourlyScroll");
     if (!hourlyScroll) return;
 
     const now = new Date();
     const currentHour = now.getHours();
-
-    const times = data.hourly.time;
-    const temps = data.hourly.temperature_2m;
-    const codes = data.hourly.weather_code;
+    const times    = data.hourly.time;
+    const temps    = data.hourly.temperature_2m;
+    const codes    = data.hourly.weather_code;
     const rainProb = data.hourly.precipitation_probability;
 
-    // Găsim indexul orei curente în array
     let startIndex = 0;
     for (let i = 0; i < times.length; i++) {
         const itemDate = new Date(times[i]);
@@ -178,44 +183,89 @@ function updateHourlyForecast(data) {
     }
 
     hourlyScroll.innerHTML = "";
-
-    // Afișăm 24 ore începând de la ora curentă
     const count = Math.min(24, times.length - startIndex);
+
     for (let j = 0; j < count; j++) {
         const idx = startIndex + j;
         const itemDate = new Date(times[idx]);
         const hour = itemDate.getHours();
         const isCurrent = j === 0;
-
-        const timeLabel = isCurrent
-            ? "Acum"
-            : hour.toString().padStart(2, "0") + ":00";
+        const timeLabel = isCurrent ? "Acum" : hour.toString().padStart(2, "0") + ":00";
 
         const rain = rainProb ? rainProb[idx] : null;
-        const rainHtml = rain !== null
-            ? `<span class="hourly-rain">💧${rain}%</span>`
-            : "";
+        const rainHtml = rain !== null ? `<span class="hourly-rain">💧${rain}%</span>` : "";
 
-        hourlyScroll.innerHTML += `
-            <div class="hourly-item ${isCurrent ? "current-hour" : ""}">
-                <span class="hourly-time">${timeLabel}</span>
-                <span class="hourly-icon">${getEmoji(codes[idx])}</span>
-                <span class="hourly-temp">${Math.round(temps[idx])}°C</span>
-                ${rainHtml}
-            </div>
+        const item = document.createElement("div");
+        item.className = `hourly-item${isCurrent ? " current-hour" : ""}`;
+        item.innerHTML = `
+            <span class="hourly-time">${timeLabel}</span>
+            <span class="hourly-icon">${getEmoji(codes[idx])}</span>
+            <span class="hourly-temp">${Math.round(temps[idx])}°C</span>
+            ${rainHtml}
         `;
+        hourlyScroll.appendChild(item);
     }
 
     hourlyScroll.scrollLeft = 0;
 }
 
+function updateDailyForecast(data) {
+    const forecastGrid = document.getElementById("forecastGrid");
+    if (!forecastGrid) return;
+
+    forecastGrid.innerHTML = "";
+    const limit = Math.min(5, data.daily.time.length);
+
+    for (let i = 0; i < limit; i++) {
+        const day = new Date(data.daily.time[i])
+            .toLocaleDateString('ro-RO', { weekday: 'short' });
+
+        const div = document.createElement("div");
+        div.className = "forecast-day";
+        div.innerHTML = `
+            <span class="forecast-day-name">${day}</span>
+            <span class="forecast-icon">${getEmoji(data.daily.weather_code[i])}</span>
+            <span class="forecast-temp">${Math.round(data.daily.temperature_2m_max[i])}°</span>
+        `;
+        forecastGrid.appendChild(div);
+    }
+}
+
 function getDesc(c) {
-    const d = {0:"Senin",1:"Mai mult senin",2:"Parțial noros",3:"Noros",45:"Ceață",61:"Ploaie",95:"Furtună"};
+    const d = {
+        0:  "Senin",
+        1:  "Mai mult senin",
+        2:  "Parțial noros",
+        3:  "Noros",
+        45: "Ceață",
+        48: "Ceață cu chiciură",
+        51: "Burniță ușoară",
+        61: "Ploaie ușoară",
+        63: "Ploaie moderată",
+        71: "Ninsoare ușoară",
+        80: "Averse",
+        95: "Furtună",
+        99: "Furtună cu grindină",
+    };
     return d[c] || "Variabil";
 }
 
 function getEmoji(c) {
-    const e = {0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",61:"🌧️",95:"⛈️"};
+    const e = {
+        0:  "☀️",
+        1:  "🌤️",
+        2:  "⛅",
+        3:  "☁️",
+        45: "🌫️",
+        48: "🌫️",
+        51: "🌦️",
+        61: "🌧️",
+        63: "🌧️",
+        71: "❄️",
+        80: "🌦️",
+        95: "⛈️",
+        99: "⛈️",
+    };
     return e[c] || "☁️";
 }
 
@@ -231,7 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.querySelector('.search-btn').addEventListener('click', () => {
-        const val = document.getElementById("searchInput").value;
+        const val = document.getElementById("searchInput").value.trim();
         document.getElementById("searchInput").value = "";
         searchGlobalWeather(val);
     });
@@ -240,7 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("searchInput").addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            const val = e.target.value;
+            const val = e.target.value.trim();
             e.target.value = "";
             searchGlobalWeather(val);
         }
