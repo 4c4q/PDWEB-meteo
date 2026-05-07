@@ -1,7 +1,96 @@
 let refreshInterval;
 let map = null;
 let marker = null;
+let useCelsius = true;
+let lastData = null;
+let particleAnimation = null;
 
+// ── PARTICULE ANIMATE ──
+const PARTICLE_TYPES = {
+    rain:  { codes: [51,61,63,80,81,82], color: "rgba(147,197,253,0.7)", count: 120, speed: 14, size: 2, angle: 15 },
+    snow:  { codes: [71,73,75,77,85,86], color: "rgba(255,255,255,0.8)", count: 80,  speed: 3,  size: 4, angle: 5  },
+    storm: { codes: [95,96,99],          color: "rgba(147,197,253,0.5)", count: 150, speed: 18, size: 2, angle: 25 },
+    fog:   { codes: [45,48],             color: "rgba(255,255,255,0.15)",count: 40,  speed: 0.5,size: 8, angle: 0  },
+};
+
+function getParticleType(code) {
+    for (const [type, cfg] of Object.entries(PARTICLE_TYPES)) {
+        if (cfg.codes.includes(code)) return { type, ...cfg };
+    }
+    return null;
+}
+
+function startParticles(weatherCode) {
+    const canvas = document.getElementById("particleCanvas");
+    const ctx = canvas.getContext("2d");
+
+    if (particleAnimation) cancelAnimationFrame(particleAnimation);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const cfg = getParticleType(weatherCode);
+    if (!cfg) return;
+
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = Array.from({ length: cfg.count }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        len: cfg.type === "rain" || cfg.type === "storm"
+            ? Math.random() * 15 + 10
+            : Math.random() * cfg.size + cfg.size / 2,
+        speed: cfg.speed * (0.5 + Math.random()),
+        opacity: Math.random() * 0.6 + 0.3,
+    }));
+
+    const angleRad = (cfg.angle * Math.PI) / 180;
+    const dx = Math.sin(angleRad);
+    const dy = Math.cos(angleRad);
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.globalAlpha = p.opacity;
+
+            if (cfg.type === "rain" || cfg.type === "storm") {
+                ctx.strokeStyle = cfg.color;
+                ctx.lineWidth = 1.5;
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x + dx * p.len, p.y + dy * p.len);
+                ctx.stroke();
+            } else if (cfg.type === "snow") {
+                ctx.fillStyle = cfg.color;
+                ctx.arc(p.x, p.y, p.len, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.fillStyle = cfg.color;
+                ctx.arc(p.x, p.y, p.len * 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            p.x += dx * p.speed * 0.3;
+            p.y += dy * p.speed * 0.3 + (cfg.type === "fog" ? 0 : p.speed * 0.15);
+
+            if (p.y > canvas.height) { p.y = -20; p.x = Math.random() * canvas.width; }
+            if (p.x > canvas.width)  { p.x = 0; }
+        });
+
+        ctx.globalAlpha = 1;
+        particleAnimation = requestAnimationFrame(draw);
+    }
+
+    draw();
+}
+
+window.addEventListener("resize", () => {
+    const canvas = document.getElementById("particleCanvas");
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+
+// ── BACKGROUND CROSSFADE ──
 function setBackgroundByWeather(weatherCode) {
     const gradients = {
         0:  "linear-gradient(135deg, #1e3a8a, #3b82f6)",
@@ -20,27 +109,23 @@ function setBackgroundByWeather(weatherCode) {
     };
 
     const gradient = gradients[weatherCode] || "linear-gradient(135deg, #1e3a8a, #3b82f6)";
-
     const layerA = document.getElementById("bg-layer-a");
     const layerB = document.getElementById("bg-layer-b");
-
-    const aIsActive = layerA.style.zIndex !== "-2";
+    const aIsActive = layerA.style.zIndex !== "-3";
     const incoming = aIsActive ? layerB : layerA;
     const outgoing = aIsActive ? layerA : layerB;
 
-    // Punem noul gradient pe layerul din spate
     incoming.style.background = gradient;
-    incoming.style.zIndex = "-1";
-    outgoing.style.zIndex = "-2";
-
-    // Triggeruim reflow
+    incoming.style.zIndex = "-2";
+    outgoing.style.zIndex  = "-3";
     incoming.getBoundingClientRect();
-
-    // Crossfade
     incoming.style.opacity = "1";
     outgoing.style.opacity = "0";
+
+    startParticles(weatherCode);
 }
 
+// ── HARTA ──
 function updateMap(lat, lon, name) {
     if (!map) {
         map = L.map('map').setView([lat, lon], 11);
@@ -50,7 +135,6 @@ function updateMap(lat, lon, name) {
     } else {
         map.setView([lat, lon], 11);
     }
-
     if (marker) marker.remove();
     marker = L.marker([lat, lon])
         .addTo(map)
@@ -58,6 +142,12 @@ function updateMap(lat, lon, name) {
         .openPopup();
 }
 
+// ── TEMPERATURA CONVERSIE ──
+function convertTemp(celsius) {
+    return useCelsius ? Math.round(celsius) + "°C" : Math.round(celsius * 9/5 + 32) + "°F";
+}
+
+// ── GPS ──
 function getGPSLocation() {
     const errorEl = document.getElementById("errorMessage");
     if (!navigator.geolocation) {
@@ -78,9 +168,8 @@ function getGPSLocation() {
                 const data = await res.json();
                 const name = data.address.city || data.address.town || data.address.village || "Locația ta";
                 const country = data.address.country || "";
-                const fullName = `${name}, ${country}`;
                 updateActiveButton("");
-                startLiveUpdates(latitude, longitude, fullName);
+                startLiveUpdates(latitude, longitude, `${name}, ${country}`);
                 localStorage.setItem("lastCity", name);
             } catch {
                 startLiveUpdates(latitude, longitude, "Locația ta");
@@ -93,6 +182,7 @@ function getGPSLocation() {
     );
 }
 
+// ── CAUTARE ──
 async function searchGlobalWeather(cityName) {
     if (!cityName) return;
     const errorEl = document.getElementById("errorMessage");
@@ -110,41 +200,42 @@ async function searchGlobalWeather(cityName) {
         }
 
         const { latitude, longitude, name, country } = geoData.results[0];
-        const fullName = `${name}, ${country || ""}`;
-
         updateActiveButton(name);
-        startLiveUpdates(latitude, longitude, fullName);
+        startLiveUpdates(latitude, longitude, `${name}, ${country || ""}`);
         localStorage.setItem("lastCity", cityName);
-
     } catch {
         errorEl.textContent = "Eroare de conexiune!";
         errorEl.style.display = "block";
     }
 }
 
+// ── LIVE UPDATE ──
 function startLiveUpdates(lat, lon, name) {
     if (refreshInterval) clearInterval(refreshInterval);
     fetchWeather(lat, lon, name);
     refreshInterval = setInterval(() => fetchWeather(lat, lon, name), 600000);
 }
 
+// ── FETCH ──
 async function fetchWeather(lat, lon, name) {
     const url =
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
         `&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,visibility` +
         `&hourly=temperature_2m,weather_code,precipitation_probability` +
-        `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
+        `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset` +
         `&timezone=auto&forecast_days=6`;
 
     try {
         const resp = await fetch(url);
         const data = await resp.json();
+        lastData = { data, name, lat, lon };
         updateUI(data, name, lat, lon);
     } catch (e) {
         console.error("Meteo error", e);
     }
 }
 
+// ── UPDATE UI ──
 function updateUI(data, name, lat, lon) {
     const current = data.current;
 
@@ -152,14 +243,22 @@ function updateUI(data, name, lat, lon) {
     updateMap(lat, lon, name);
 
     document.getElementById("cityName").textContent = name;
-    document.getElementById("temperature").textContent = Math.round(current.temperature_2m) + "°C";
+    document.getElementById("temperature").textContent = convertTemp(current.temperature_2m);
     document.getElementById("condition").textContent = getDesc(current.weather_code);
     document.getElementById("weatherIcon").textContent = getEmoji(current.weather_code);
 
     document.getElementById("humidity").textContent = current.relative_humidity_2m + "%";
     document.getElementById("wind").textContent = Math.round(current.wind_speed_10m) + " km/h";
-    document.getElementById("feelsLike").textContent = Math.round(current.apparent_temperature) + "°C";
+    document.getElementById("feelsLike").textContent = convertTemp(current.apparent_temperature);
     document.getElementById("visibility").textContent = (current.visibility / 1000).toFixed(0) + " km";
+
+    // Răsărit / Apus
+    if (data.daily.sunrise && data.daily.sunrise[0]) {
+        document.getElementById("sunrise").textContent =
+            new Date(data.daily.sunrise[0]).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+        document.getElementById("sunset").textContent =
+            new Date(data.daily.sunset[0]).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+    }
 
     document.getElementById("lastUpdated").textContent =
         "Live: " + new Date().toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
@@ -168,12 +267,12 @@ function updateUI(data, name, lat, lon) {
     updateDailyForecast(data);
 }
 
+// ── PROGNOZA ORARA ──
 function updateHourlyForecast(data) {
     const hourlyScroll = document.getElementById("hourlyScroll");
     if (!hourlyScroll) return;
 
     const now = new Date();
-    const currentHour = now.getHours();
     const times    = data.hourly.time;
     const temps    = data.hourly.temperature_2m;
     const codes    = data.hourly.weather_code;
@@ -182,7 +281,7 @@ function updateHourlyForecast(data) {
     let startIndex = 0;
     for (let i = 0; i < times.length; i++) {
         const itemDate = new Date(times[i]);
-        if (itemDate.toDateString() === now.toDateString() && itemDate.getHours() === currentHour) {
+        if (itemDate.toDateString() === now.toDateString() && itemDate.getHours() === now.getHours()) {
             startIndex = i;
             break;
         }
@@ -193,11 +292,9 @@ function updateHourlyForecast(data) {
 
     for (let j = 0; j < count; j++) {
         const idx = startIndex + j;
-        const itemDate = new Date(times[idx]);
-        const hour = itemDate.getHours();
+        const hour = new Date(times[idx]).getHours();
         const isCurrent = j === 0;
         const timeLabel = isCurrent ? "Acum" : hour.toString().padStart(2, "0") + ":00";
-
         const rain = rainProb ? rainProb[idx] : null;
         const rainHtml = rain !== null ? `<span class="hourly-rain">💧${rain}%</span>` : "";
 
@@ -206,15 +303,15 @@ function updateHourlyForecast(data) {
         item.innerHTML = `
             <span class="hourly-time">${timeLabel}</span>
             <span class="hourly-icon">${getEmoji(codes[idx])}</span>
-            <span class="hourly-temp">${Math.round(temps[idx])}°C</span>
+            <span class="hourly-temp">${convertTemp(temps[idx])}</span>
             ${rainHtml}
         `;
         hourlyScroll.appendChild(item);
     }
-
     hourlyScroll.scrollLeft = 0;
 }
 
+// ── PROGNOZA 5 ZILE ──
 function updateDailyForecast(data) {
     const forecastGrid = document.getElementById("forecastGrid");
     if (!forecastGrid) return;
@@ -225,13 +322,12 @@ function updateDailyForecast(data) {
     for (let i = 0; i < limit; i++) {
         const day = new Date(data.daily.time[i])
             .toLocaleDateString('ro-RO', { weekday: 'short' });
-
         const div = document.createElement("div");
         div.className = "forecast-day";
         div.innerHTML = `
             <span class="forecast-day-name">${day}</span>
             <span class="forecast-icon">${getEmoji(data.daily.weather_code[i])}</span>
-            <span class="forecast-temp">${Math.round(data.daily.temperature_2m_max[i])}°</span>
+            <span class="forecast-temp">${convertTemp(data.daily.temperature_2m_max[i])}</span>
         `;
         forecastGrid.appendChild(div);
     }
@@ -239,38 +335,18 @@ function updateDailyForecast(data) {
 
 function getDesc(c) {
     const d = {
-        0:  "Senin",
-        1:  "Mai mult senin",
-        2:  "Parțial noros",
-        3:  "Noros",
-        45: "Ceață",
-        48: "Ceață cu chiciură",
-        51: "Burniță ușoară",
-        61: "Ploaie ușoară",
-        63: "Ploaie moderată",
-        71: "Ninsoare ușoară",
-        80: "Averse",
-        95: "Furtună",
-        99: "Furtună cu grindină",
+        0:"Senin", 1:"Mai mult senin", 2:"Parțial noros", 3:"Noros",
+        45:"Ceață", 48:"Ceață cu chiciură", 51:"Burniță ușoară",
+        61:"Ploaie ușoară", 63:"Ploaie moderată", 71:"Ninsoare ușoară",
+        80:"Averse", 95:"Furtună", 99:"Furtună cu grindină",
     };
     return d[c] || "Variabil";
 }
 
 function getEmoji(c) {
     const e = {
-        0:  "☀️",
-        1:  "🌤️",
-        2:  "⛅",
-        3:  "☁️",
-        45: "🌫️",
-        48: "🌫️",
-        51: "🌦️",
-        61: "🌧️",
-        63: "🌧️",
-        71: "❄️",
-        80: "🌦️",
-        95: "⛈️",
-        99: "⛈️",
+        0:"☀️", 1:"🌤️", 2:"⛅", 3:"☁️", 45:"🌫️", 48:"🌫️",
+        51:"🌦️", 61:"🌧️", 63:"🌧️", 71:"❄️", 80:"🌦️", 95:"⛈️", 99:"⛈️",
     };
     return e[c] || "☁️";
 }
@@ -281,6 +357,7 @@ function updateActiveButton(name) {
     });
 }
 
+// ── INIT ──
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll('.city-btn').forEach(btn => {
         btn.addEventListener('click', () => searchGlobalWeather(btn.textContent));
@@ -300,6 +377,21 @@ document.addEventListener("DOMContentLoaded", () => {
             e.target.value = "";
             searchGlobalWeather(val);
         }
+    });
+
+    // Toggle °C / °F
+    document.getElementById("btnC").addEventListener('click', () => {
+        useCelsius = true;
+        document.getElementById("btnC").classList.add("active");
+        document.getElementById("btnF").classList.remove("active");
+        if (lastData) updateUI(lastData.data, lastData.name, lastData.lat, lastData.lon);
+    });
+
+    document.getElementById("btnF").addEventListener('click', () => {
+        useCelsius = false;
+        document.getElementById("btnF").classList.add("active");
+        document.getElementById("btnC").classList.remove("active");
+        if (lastData) updateUI(lastData.data, lastData.name, lastData.lat, lastData.lon);
     });
 
     searchGlobalWeather(localStorage.getItem("lastCity") || "București");
