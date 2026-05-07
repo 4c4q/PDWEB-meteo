@@ -49,11 +49,9 @@ function startParticles(weatherCode) {
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         particles.forEach(p => {
             ctx.beginPath();
             ctx.globalAlpha = p.opacity;
-
             if (cfg.type === "rain" || cfg.type === "storm") {
                 ctx.strokeStyle = cfg.color;
                 ctx.lineWidth = 1.5;
@@ -69,18 +67,14 @@ function startParticles(weatherCode) {
                 ctx.arc(p.x, p.y, p.len * 6, 0, Math.PI * 2);
                 ctx.fill();
             }
-
             p.x += dx * p.speed * 0.3;
             p.y += dy * p.speed * 0.3 + (cfg.type === "fog" ? 0 : p.speed * 0.15);
-
             if (p.y > canvas.height) { p.y = -20; p.x = Math.random() * canvas.width; }
             if (p.x > canvas.width)  { p.x = 0; }
         });
-
         ctx.globalAlpha = 1;
         particleAnimation = requestAnimationFrame(draw);
     }
-
     draw();
 }
 
@@ -145,6 +139,22 @@ function updateMap(lat, lon, name) {
 // ── TEMPERATURA CONVERSIE ──
 function convertTemp(celsius) {
     return useCelsius ? Math.round(celsius) + "°C" : Math.round(celsius * 9/5 + 32) + "°F";
+}
+
+// ── PUNCT DE ROUA ──
+function calcDewPoint(tempC, humidity) {
+    const a = 17.27, b = 237.7;
+    const alpha = (a * tempC) / (b + tempC) + Math.log(humidity / 100);
+    return (b * alpha) / (a - alpha);
+}
+
+// ── INDICE UV ──
+function getUVInfo(uv) {
+    if (uv <= 2)  return { label: "Scăzut",   cls: "uv-low" };
+    if (uv <= 5)  return { label: "Moderat",  cls: "uv-mid" };
+    if (uv <= 7)  return { label: "Ridicat",  cls: "uv-high" };
+    if (uv <= 10) return { label: "F. ridicat",cls: "uv-vhigh" };
+    return              { label: "Extrem",    cls: "uv-extreme" };
 }
 
 // ── GPS ──
@@ -220,7 +230,7 @@ function startLiveUpdates(lat, lon, name) {
 async function fetchWeather(lat, lon, name) {
     const url =
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-        `&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,visibility` +
+        `&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,visibility,surface_pressure,uv_index` +
         `&hourly=temperature_2m,weather_code,precipitation_probability` +
         `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset` +
         `&timezone=auto&forecast_days=6`;
@@ -252,11 +262,28 @@ function updateUI(data, name, lat, lon) {
     document.getElementById("feelsLike").textContent = convertTemp(current.apparent_temperature);
     document.getElementById("visibility").textContent = (current.visibility / 1000).toFixed(0) + " km";
 
-  // Răsărit / Apus
-if (data.daily.sunrise && data.daily.sunrise[0]) {
-    document.getElementById("sunrise").textContent = data.daily.sunrise[0].substring(11, 16);
-    document.getElementById("sunset").textContent  = data.daily.sunset[0].substring(11, 16);
-}
+    // Punct de rouă
+    const dew = calcDewPoint(current.temperature_2m, current.relative_humidity_2m);
+    document.getElementById("dewpoint").textContent = convertTemp(dew);
+
+    // Presiune
+    document.getElementById("pressure").textContent = Math.round(current.surface_pressure) + " hPa";
+
+    // Indice UV
+    const uv = current.uv_index ?? null;
+    if (uv !== null) {
+        const uvInfo = getUVInfo(uv);
+        document.getElementById("uvindex").innerHTML =
+            `${Math.round(uv)} <span class="uv-badge ${uvInfo.cls}">${uvInfo.label}</span>`;
+    } else {
+        document.getElementById("uvindex").textContent = "N/A";
+    }
+
+    // Răsărit / Apus
+    if (data.daily.sunrise && data.daily.sunrise[0]) {
+        document.getElementById("sunrise").textContent = data.daily.sunrise[0].substring(11, 16);
+        document.getElementById("sunset").textContent  = data.daily.sunset[0].substring(11, 16);
+    }
 
     document.getElementById("lastUpdated").textContent =
         "Live: " + new Date().toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
