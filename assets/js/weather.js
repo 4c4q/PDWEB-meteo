@@ -252,13 +252,11 @@ function updateUI(data, name, lat, lon) {
     document.getElementById("feelsLike").textContent = convertTemp(current.apparent_temperature);
     document.getElementById("visibility").textContent = (current.visibility / 1000).toFixed(0) + " km";
 
-    // Răsărit / Apus
-    if (data.daily.sunrise && data.daily.sunrise[0]) {
-        document.getElementById("sunrise").textContent =
-            new Date(data.daily.sunrise[0]).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
-        document.getElementById("sunset").textContent =
-            new Date(data.daily.sunset[0]).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
-    }
+  // Răsărit / Apus
+if (data.daily.sunrise && data.daily.sunrise[0]) {
+    document.getElementById("sunrise").textContent = data.daily.sunrise[0].substring(11, 16);
+    document.getElementById("sunset").textContent  = data.daily.sunset[0].substring(11, 16);
+}
 
     document.getElementById("lastUpdated").textContent =
         "Live: " + new Date().toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
